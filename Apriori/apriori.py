@@ -8,11 +8,11 @@ Usage:
 """
 
 import sys
-
+import re
 from itertools import chain, combinations
 from collections import defaultdict
 from optparse import OptionParser
-
+import csv
 
 def subsets(arr):
     """ Returns non empty subsets of arr"""
@@ -112,11 +112,13 @@ def runApriori(data_iter, minSupport, minConfidence):
                                            confidence))
     return toRetItems, toRetRules
 
+frequent_set = []
 
 def printResults(items, rules):
     """prints the generated itemsets sorted by support and the confidence rules sorted by confidence"""
     for item, support in sorted(items, key=lambda (item, support): support):
         print "item: %s , %.3f" % (str(item), support)
+        frequent_set.append(item)
     print "\n------------------------ RULES:"
     for rule, confidence in sorted(rules, key=lambda (rule, confidence): confidence):
         pre, post = rule
@@ -167,3 +169,16 @@ if __name__ == "__main__":
     items, rules = runApriori(inFile, minSupport, minConfidence)
 
     printResults(items, rules)
+    frequent_item_set = []
+    with open("frequent_train_set.csv","wb") as f:
+        writer = csv.writer(f,quoting=csv.QUOTE_ALL)
+        for  words in frequent_set:
+            word_list = []
+            for tt in str(words).split('\''):
+                if re.search('[a-zA-Z]+',tt):
+                    word_list.append(tt.split('"')[1])
+            writer.writerow(word_list)
+            frequent_item_set.append(word_list)
+
+    print frequent_item_set
+
