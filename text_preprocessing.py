@@ -64,6 +64,11 @@ inverted_index_train_pruned = {}
 inverted_index_test_pruned = {}
 frequent_item_list = []
 
+final_inverted_train_index = {}
+final_category_docs = {}
+trained_categories = {}
+
+
 def build_index_train(doc_data,doc_id):
 	for i in doc_data:
 		doc_list  = []
@@ -109,9 +114,6 @@ def extract_csv():
 		reader = csv.reader(f)
 		for word in list(reader):
 			frequent_item_list.append(word)	
-
-final_inverted_train_index = {}
-final_category_docs = {}
 
 def extract_category_csv():
 	with open('category_train_docs.csv','rb') as f:
@@ -203,6 +205,47 @@ def main():
 #main()
 #print frequent_item_list
 
+
+def test_weight_computation(test_doc_tokens):
+	category_weights = {}
+	remove_duplicates = []
+	for tt in test_doc_tokens:
+		if tt not in remove_duplicates:
+			remove_duplicates.append(tt)
+
+	test_doc_tokens = []
+	test_doc_tokens = remove_duplicates
+
+	for category_named in trained_categories:
+		x = 0 
+		for each_itemset in trained_categories[category_named]:
+				if len(each_itemset) == 1:
+					if each_itemset[0] in test_doc_tokens:
+						x = x + len(each_itemset)
+
+				elif len(each_itemset) == 2:
+					if each_itemset[0] or  each_itemset[1] in test_doc_tokens:
+						x = x + len(each_itemset)
+
+				elif len(each_itemset) == 3:
+					if each_itemset[0]  or each_itemset[1]  or each_itemset[2] in test_doc_tokens:
+						x = x + len(each_itemset)
+
+				elif len(each_itemset) == 4:
+					if each_itemset[0]  or each_itemset[1]  or each_itemset[2] or each_itemset[3] in test_doc_tokens:
+						x = x + len(each_itemset)
+			
+		print x		
+		category_weights[category_named] = x
+
+	val = max(category_weights.iteritems(),key=operator.itemgetter(1))
+	#print val
+	return val[0]
+
+
+
+
+
 if __name__ == '__main__':
 	
 	#main()
@@ -215,7 +258,7 @@ if __name__ == '__main__':
 
 	b =  list(set(final_inverted_train_index['said']) & set(final_inverted_train_index['month']))
 	#print list(set(final_category_docs['acq']) & set(b))
-	trained_categories = {}
+	
 
 	for item_set in frequent_item_list:
 		
@@ -251,6 +294,50 @@ if __name__ == '__main__':
 				else:
 						trained_categories[i].append(item_set)
 
+	final_test_categories = {}
 
-	for tt in trained_categories:
-		print trained_categories[tt]
+	for doc_id in reuters.fileids():
+		if doc_id.startswith("test"):		
+			#test_data[doc_id] = tokenize(reuters.raw(doc_id))
+			doc_number = doc_id.split('/')[1]
+			if test_weight_computation(tokenize(reuters.raw(doc_id))) not in final_test_categories:
+				final_test_categories[test_weight_computation(tokenize(reuters.raw(doc_id)))] = []
+				final_test_categories[test_weight_computation(tokenize(reuters.raw(doc_id)))].append(doc_number)
+			else:
+				final_test_categories[test_weight_computation(tokenize(reuters.raw(doc_id)))].append(doc_number)
+			
+			#exit()
+	
+
+	for tt in final_test_categories:
+		print tt + ' ' + str(final_test_categories[tt])
+
+	
+
+	test_category_list = {}
+	categories = reuters.categories() # Total categories list
+	for category_name in categories:
+			category_docs = reuters.fileids(category_name)
+			test_category_list[category_name] = []
+			for category_id in category_docs:	
+				if category_id.startswith("test"):
+					test_category_list[category_name].append(category_id.split('/')[1])
+
+
+	for tt in final_test_categories:
+		true_positive_list = list(set(final_test_categories[tt]) & set(test_category_list[tt]))
+		
+		print tt + ' ' + str(len(true_positive_list))
+		false_positive_list = []
+		
+		for mk in final_test_categories[tt]:
+			if mk not in true_positive_list:
+				false_positive_list.append(mk)
+
+		false_negative_list = []
+
+		for mk in test_category_list[tt]:
+			if mk not in true_positive_list:
+				false_negative_list.append(mk)
+
+		print len(true_positive_list)/float(len(true_positive_list) + len(false_positive_list))
