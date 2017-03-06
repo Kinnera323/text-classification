@@ -64,11 +64,10 @@ inverted_index_train_pruned = {}
 inverted_index_test_pruned = {}
 frequent_item_list = []
 
+
 final_inverted_train_index = {}
 final_category_docs = {}
-trained_categories = {}
-
-
+trained_categorie
 def build_index_train(doc_data,doc_id):
 	for i in doc_data:
 		doc_list  = []
@@ -114,6 +113,10 @@ def extract_csv():
 		reader = csv.reader(f)
 		for word in list(reader):
 			frequent_item_list.append(word)	
+
+
+final_inverted_train_index = {}
+final_category_docs = {}
 
 def extract_category_csv():
 	with open('category_train_docs.csv','rb') as f:
@@ -206,6 +209,7 @@ def main():
 #print frequent_item_list
 
 
+
 def test_weight_computation(test_doc_tokens):
 	category_weights = {}
 	remove_duplicates = []
@@ -258,7 +262,9 @@ if __name__ == '__main__':
 
 	b =  list(set(final_inverted_train_index['said']) & set(final_inverted_train_index['month']))
 	#print list(set(final_category_docs['acq']) & set(b))
-	
+
+	trained_categories = {}
+
 
 	for item_set in frequent_item_list:
 		
@@ -293,6 +299,7 @@ if __name__ == '__main__':
 						trained_categories[i].append(item_set)
 				else:
 						trained_categories[i].append(item_set)
+
 
 	final_test_categories = {}
 
@@ -341,3 +348,8 @@ if __name__ == '__main__':
 				false_negative_list.append(mk)
 
 		print len(true_positive_list)/float(len(true_positive_list) + len(false_positive_list))
+
+
+	for tt in trained_categories:
+		print trained_categories[tt]
+
